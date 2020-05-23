@@ -1,0 +1,44 @@
+#pragma once
+
+#define MAX_QUEUE 32
+#define MAX_DENDRITES 4
+
+#include <iostream>
+#include <string>
+#include <cmath>
+
+using namespace std;
+
+class Connection;
+class Neuron;
+
+class Connection {
+private:
+    Neuron* connected_neuron;
+    float* state_queue;
+    float* multiplier;
+    int* delay; //delay in cycles
+public:
+    Connection(Neuron*);
+    ~Connection();
+    float time_step ();
+    friend ostream& operator<< (ostream&, const Connection&);
+};
+
+class Neuron {
+private:
+    Connection** dendrites;
+    int* n_dendrites;
+    //Connection* axion;
+    float* state;
+    float* decay_rate;
+    string* name;
+public:
+    Neuron (string);
+    ~Neuron ();
+    void adjust_state (float);
+    void time_step ();
+    float get_state ();
+    void attach_dendrite (Neuron*);
+    friend ostream& operator<< (ostream&, const Neuron&);
+};
