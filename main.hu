@@ -12,33 +12,35 @@ using namespace std;
 class Connection;
 class Neuron;
 
+__device__ float Connection__time_step (float* , int*, float*, float*);
+__device__ void Neuron__time_step (float*, float*, int*, float**);
+__device__ void Neuron__adjust_state (float*, float);
+__device__ float Neuron__get_state (float*);
+
 class Connection {
-private:
+public:
     Neuron* connected_neuron;
+    float* connected_neuron_state;
     float* state_queue;
     float* multiplier;
     int* delay; //delay in cycles
-public:
-    Connection(Neuron*);
-    ~Connection();
-    float time_step ();
-    friend ostream& operator<< (ostream&, const Connection&);
+    __host__ Connection(Neuron*);
+    __host__ ~Connection();
+    //__device__ float time_step ();
+    __host__ friend ostream& operator<< (ostream&, const Connection&);
 };
 
 class Neuron {
-private:
+public:
     Connection** dendrites;
+    float** dendrites_states;
     int* n_dendrites;
     //Connection* axion;
-    float* state;
     float* decay_rate;
     string* name;
-public:
-    Neuron (string);
-    ~Neuron ();
-    void adjust_state (float);
-    void time_step ();
-    float get_state ();
-    void attach_dendrite (Neuron*);
-    friend ostream& operator<< (ostream&, const Neuron&);
+    float* state;
+    __host__ Neuron (string);
+    __host__ ~Neuron ();
+    __host__ void attach_dendrite (Neuron*);
+    __host__ friend ostream& operator<< (ostream&, const Neuron&);
 };
