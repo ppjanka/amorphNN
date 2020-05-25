@@ -1,7 +1,7 @@
 #pragma once
 
 #define MAX_QUEUE 32
-#define MAX_DENDRITES 4
+#define MAX_DENDRITES 100
 
 #include <iostream>
 #include <string>
@@ -12,18 +12,26 @@ using namespace std;
 class Connection;
 class Neuron;
 
-__device__ float Connection__time_step (float* , int*, float*, float*);
-__device__ void Neuron__time_step (float*, float*, int*, float**);
+__device__ float Connection__time_step (float**);
+__device__ void Neuron__time_step (float**);
 __device__ void Neuron__adjust_state (float*, float);
 __device__ float Neuron__get_state (float*);
+
+__global__ void time_step_single_connection (float**);
+__global__ void adjust_state_single_neuron (float*, float);
+__global__ void time_step_single_neuron (float**);
+__global__ void Brain__time_step_connections (int*, float***);
+__global__ void Brain__time_step_neurons (int*, float***);
 
 class Connection {
 public:
     Neuron* connected_neuron;
+    float** memblock; // stores device addresses to all data
+    float* memblock_buffer; // stores data continuously on device
     float* connected_neuron_state;
-    float* state_queue;
     float* multiplier;
-    int* delay; //delay in cycles
+    float* delay; //delay in cycles
+    float* state_queue;
     __host__ Connection(Neuron*);
     __host__ ~Connection();
     //__device__ float time_step ();
@@ -32,15 +40,30 @@ public:
 
 class Neuron {
 public:
-    Connection** dendrites;
-    float** dendrites_states;
-    int* n_dendrites;
-    //Connection* axion;
-    float* decay_rate;
     string* name;
+    Connection** dendrites;
+    float** memblock; // stores device addresses to all data
+    float* memblock_buffer; // stores data continuously on device
     float* state;
+    float* decay_rate;
+    float* n_dendrites;
+    float** dendrites_states;
     __host__ Neuron (string);
     __host__ ~Neuron ();
     __host__ void attach_dendrite (Neuron*);
     __host__ friend ostream& operator<< (ostream&, const Neuron&);
+};
+
+class Brain {
+public:
+    string* name;
+    Connection** connections;
+    Neuron** neurons;
+    int* n_connections;
+    float*** connection_memblocks;
+    int* n_neurons;
+    float*** neuron_memblocks;
+    __host__ Brain (string, int, int);
+    __host__ ~Brain ();
+    __host__ friend ostream& operator<< (ostream&, const Brain&);
 };

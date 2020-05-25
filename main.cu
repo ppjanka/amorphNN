@@ -3,24 +3,25 @@
 
 using namespace std;
 
-__global__
-void adjust_state_single_neuron (float* state, float x) {
-    Neuron__adjust_state(state, x);
-}
-
-__global__
-void time_step_single_neuron (float* state, float* decay_rate, int* n_dendrites, float** dendrites_states) {
-    Neuron__time_step (state, decay_rate, n_dendrites, dendrites_states);
-}
-
-__global__
-void time_step_single_connection (float* multiplier, int* delay, float* state_queue, float* connected_neuron_state) {
-    Connection__time_step (multiplier, delay, state_queue, connected_neuron_state);
-}
-
 int main (void) {
 
-    Neuron n1 ("1"), n2 ("2");
+    Brain bob ("bob", 1000, 100);
+    adjust_state_single_neuron<<<1,1>>>(bob.neurons[0]->state, 1.0);
+
+    //cout << bob;
+
+    for (int time=0; time<10; time++) {
+        Brain__time_step_connections<<<1,1>>>(bob.n_connections, bob.connection_memblocks);
+        cudaDeviceSynchronize(); // wait until all connections updated
+        Brain__time_step_neurons<<<1,1>>>(bob.n_neurons, bob.neuron_memblocks);
+        cudaDeviceSynchronize(); // wait until all connections updated
+        //cout << bob;
+        cout << "Time " << time << " finished." << endl << endl;
+    }
+
+    cudaDeviceSynchronize();
+
+    /*Neuron n1 ("1"), n2 ("2");
 
     cout << n1 << n2;
     n2.attach_dendrite(&n1);
@@ -29,11 +30,11 @@ int main (void) {
     cout << n1 << n2;
 
     for (int time=0; time<10; time++) {
-        time_step_single_connection<<<1,1>>>(c1->multiplier, c1->delay, c1->state_queue, c1->connected_neuron_state);
-        time_step_single_neuron<<<1,1>>>(n1.state, n1.decay_rate, n1.n_dendrites, n1.dendrites_states);
-        time_step_single_neuron<<<1,1>>>(n2.state, n2.decay_rate, n2.n_dendrites, n2.dendrites_states);
+        time_step_single_connection<<<1,1>>>(c1->memblock);
+        time_step_single_neuron<<<1,1>>>(n1.memblock);
+        time_step_single_neuron<<<1,1>>>(n2.memblock);
         cout << n1 << n2;
-    }
+    }*/
 
     return 0;
 }

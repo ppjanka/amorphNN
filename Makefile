@@ -1,7 +1,7 @@
-main: main.o connection.o neuron.o
-	nvcc -o main main.o connection.o neuron.o
+main: main.o connection.o neuron.o brain.o
+	nvcc -o main main.o connection.o neuron.o brain.o
 
-%.o: %.cu
+%.o: %.cu main.hu
 	nvcc -dc $<
 
 PHONY: clean
