@@ -56,7 +56,7 @@ float Connection__time_step (float** connection_memblock) {
 __host__
 ostream& operator<< (ostream& cout, const Connection& c) {
     cudaDeviceSynchronize();
-    cout << " --Conn.: multiplier=" << *(c.multiplier) << ", delay=" << *(c.delay) << ", queue: ";
+    cout << " --Conn. to " << *(c.connected_neuron->name) << ": multiplier=" << *(c.multiplier) << ", delay=" << *(c.delay) << ", queue: ";
     for (int i=0; i<*(c.delay); i++)
         cout << c.state_queue[i] << " ";
     cout << endl;

@@ -21,7 +21,7 @@ __global__ void time_step_single_connection (float**);
 __global__ void adjust_state_single_neuron (float*, float);
 __global__ void time_step_single_neuron (float**);
 __global__ void Brain__time_step_connections (int*, float***);
-__global__ void Brain__time_step_neurons (int*, float***);
+__global__ void Brain__time_step_neurons (int*, float***, int*);
 
 class Connection {
 public:
@@ -48,7 +48,7 @@ public:
     float* decay_rate;
     float* n_dendrites;
     float** dendrites_states;
-    __host__ Neuron (string);
+    __host__ Neuron (string _name, float _state=0., float _decay_rate=10.);
     __host__ ~Neuron ();
     __host__ void attach_dendrite (Neuron*);
     __host__ friend ostream& operator<< (ostream&, const Neuron&);
@@ -59,11 +59,18 @@ public:
     string* name;
     Connection** connections;
     Neuron** neurons;
+    Neuron** input_neurons;
+    Neuron** output_neurons;
     int* n_connections;
     float*** connection_memblocks;
     int* n_neurons;
     float*** neuron_memblocks;
-    __host__ Brain (string, int, int);
+    int* n_inputs;
+    float** input_states;
+    int* n_outputs;
+    float** output_states;
+    __host__ Brain (string, int, int, int _n_inputs=0, int _n_outputs=0);
     __host__ ~Brain ();
     __host__ friend ostream& operator<< (ostream&, const Brain&);
+    __host__ void print_output ();
 };

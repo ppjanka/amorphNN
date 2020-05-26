@@ -4,7 +4,7 @@
 using namespace std;
 
 __host__
-Neuron::Neuron (string _name) {
+Neuron::Neuron (string _name, float _state, float _decay_rate) {
     cudaMallocManaged(&name, sizeof(string));
     (*name) = _name;
     // allocate
@@ -15,8 +15,8 @@ Neuron::Neuron (string _name) {
     decay_rate = &(memblock_buffer[1]);
     n_dendrites = &(memblock_buffer[2]);
     // initialize
-    (*state) = 0.;
-    (*decay_rate) = 10.;
+    (*state) = _state;
+    (*decay_rate) = _decay_rate;
     (*n_dendrites) = 0;
     // connect to memblock
     memblock[0] = state;
