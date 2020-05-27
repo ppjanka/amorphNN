@@ -51,23 +51,28 @@ void Neuron__time_step (float** memblock) {
     for (int i=0; i<int(*n_dendrites); i++) {
         Neuron__adjust_state(state, *(dendrites_states[i]));
     }
+    Neuron__activate(state);
 }
 
 __device__
 void Neuron__adjust_state (float* state, float dx) {
     (*state) += dx;
 }
+__device__
+void Neuron__activate (float* state) {
+    // use sigmoid activation
+    (*state) = 2./(1.+exp(-(*state))) - 1.;
+}
 
 __device__
 float Neuron__get_state (float* state) {
-    // use sigmoid activation
     return 1./(1.+exp(-(*state)));
 }
 
 __host__
-void Neuron::attach_dendrite (Neuron* neuron) {
+void Neuron::attach_dendrite (Neuron* neuron, int delay_init, float multiplier_init) {
     cudaDeviceSynchronize();
-    dendrites[int(*n_dendrites)] = new Connection(neuron);
+    dendrites[int(*n_dendrites)] = new Connection(neuron, max(1,delay_init), multiplier_init);
     dendrites_states[int(*n_dendrites)] = dendrites[int(*n_dendrites)]->state_queue;
     (*n_dendrites) += 1.0;
     cudaDeviceSynchronize();

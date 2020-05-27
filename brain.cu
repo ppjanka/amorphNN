@@ -4,7 +4,10 @@
 using namespace std;
 
 __host__
-Brain::Brain (string _name, int _n_neurons, int avg_connections_per_neuron, int _n_inputs, int _n_outputs, float max_init_state, float max_init_delay) {
+Brain::Brain (string _name, int _n_neurons, int avg_connections_per_neuron,
+    int _n_inputs, int _n_outputs,
+    float max_init_state, float max_init_decay,
+    int min_init_delay, int max_init_delay, float max_init_multiplier) {
     cout << "Creating " << _name << "'s brain..." << endl;
     // parse parameters
     cout << " -- parsing parameters.. " << flush;
@@ -32,7 +35,7 @@ Brain::Brain (string _name, int _n_neurons, int avg_connections_per_neuron, int 
     cout << " -- creating neurons.. " << flush;
     for (int i=0; i < (*n_neurons); i++) {
         // use random state and decay rate
-        neurons[i] = new Neuron (to_string(i), max_init_state*rand()/RAND_MAX, max_init_delay*rand()/RAND_MAX);
+        neurons[i] = new Neuron (to_string(i), max_init_state*rand()/RAND_MAX, max_init_decay*rand()/RAND_MAX);
         neuron_memblocks[i] = neurons[i]->memblock;
     }
     input_neurons = neurons;
@@ -53,7 +56,7 @@ Brain::Brain (string _name, int _n_neurons, int avg_connections_per_neuron, int 
         for (int k=0; k<avg_connections_per_neuron; k++) {// const conn per neur for now
             // randomly choose the connected neuron
             do {j = rand() % (*n_neurons);} while (j == i);
-            neurons[i]->attach_dendrite(neurons[j]);
+            neurons[i]->attach_dendrite(neurons[j], min_init_delay + (max_init_delay-min_init_delay) * 1.*rand()/RAND_MAX, max_init_multiplier * rand()/RAND_MAX);
             connections[ci] = neurons[i]->dendrites[int(*(neurons[i]->n_dendrites))-1];
             connection_memblocks[ci] = connections[ci]->memblock;
             ci++;

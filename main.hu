@@ -16,9 +16,10 @@ using namespace std;
 class Connection;
 class Neuron;
 
-__device__ float Connection__time_step (float**);
+__device__ void Connection__time_step (float**);
 __device__ void Neuron__time_step (float**);
 __device__ void Neuron__adjust_state (float*, float);
+__device__ void Neuron__activate (float*);
 __device__ float Neuron__get_state (float*);
 
 __global__ void time_step_single_connection (float**);
@@ -39,7 +40,7 @@ public:
     float* multiplier;
     float* delay; //delay in cycles
     float* state_queue;
-    __host__ Connection(Neuron*);
+    __host__ Connection(Neuron*, int delay_init=10, float multiplier_init=1.0);
     __host__ ~Connection();
     //__device__ float time_step ();
     __host__ friend ostream& operator<< (ostream&, const Connection&);
@@ -57,7 +58,7 @@ public:
     float** dendrites_states;
     __host__ Neuron (string _name, float _state=0., float _decay_rate=10.);
     __host__ ~Neuron ();
-    __host__ void attach_dendrite (Neuron*);
+    __host__ void attach_dendrite (Neuron*, int delay_init=10, float multiplier_init=1.0);
     __host__ friend ostream& operator<< (ostream&, const Neuron&);
 };
 
@@ -76,7 +77,9 @@ public:
     float** input_states;
     int* n_outputs;
     float** output_states;
-    __host__ Brain (string, int, int, int _n_inputs=0, int _n_outputs=0, float max_init_state=0., float max_init_delay=10.);
+    __host__ Brain (string, int, int, int _n_inputs=0, int _n_outputs=0,
+        float max_init_state=0., float max_init_decay=10., // neuron init
+        int min_init_delay=10, int max_init_delay=10, float max_init_multiplier=1.); // connection init
     __host__ ~Brain ();
     __host__ friend ostream& operator<< (ostream&, const Brain&);
     __host__ void print_output ();
