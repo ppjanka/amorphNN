@@ -110,7 +110,7 @@ void Brain__time_step_neurons (int* n_neurons, float*** neuron_memblocks, int* n
     }
 }
 
-// raise all connection multiplicators to a small random power in (1-eps, 1+eps)
+// multiply all connection multiplicators by a small random power in (1/(1+eps), 1+eps)
 __global__
 void Brain__shake_connections (int* n_connections, float*** connection_memblocks, float eps, curandState* curand_state, unsigned long seed) {
     // CUDA setup
@@ -119,10 +119,11 @@ void Brain__shake_connections (int* n_connections, float*** connection_memblocks
     // CUrand setup
     curand_init(seed, index, 0, &curand_state[index]);
     // update connections
-    float power;
+    float factor, rand;
     for (int i=index; i<(*n_connections); i+=stride) {
-        power = (1.-eps) + 2.*eps * curand_normal(curand_state);
-        *(connection_memblocks[i][1]) = pow(*(connection_memblocks[i][1]), power);
+        do {rand = curand_normal(curand_state);} while (rand < -1. || rand > 1.); // limits to prevent inf
+        factor = exp(log(1.+eps) * rand);
+        *(connection_memblocks[i][1]) *= factor;
     }
 }
 // raise all connection multiplicators to a given constant power

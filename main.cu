@@ -10,7 +10,7 @@ int main (void) {
     curandState *curand_state;
     cudaMalloc(&curand_state, sizeof(curandState));
 
-    Brain bob ("bob", 1000, 100, 8, 4, 0., 0.0001, 1, 10, 0.02);
+    Brain bob ("bob", 1000, 100, 8, 4, 0., 10., 1, 10, 0.02);
     adjust_state_single_neuron<<<1,1>>>(bob.neurons[0]->state, 1.0);
 
     //cout << bob; return 0;
@@ -23,7 +23,7 @@ int main (void) {
         //cout << bob;
         bob.print_output();
         cout << "Time " << t << " finished." << endl << endl;
-        //Brain__shake_connections<<<40,32>>>(bob.n_connections, bob.connection_memblocks, 0.01, curand_state, time(NULL));
+        Brain__shake_connections<<<40,32>>>(bob.n_connections, bob.connection_memblocks, 0.01, curand_state, time(NULL));
     }
 
     //cout << bob;
