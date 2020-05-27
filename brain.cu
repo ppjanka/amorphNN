@@ -4,7 +4,7 @@
 using namespace std;
 
 __host__
-Brain::Brain (string _name, int _n_neurons, int avg_connections_per_neuron, int _n_inputs, int _n_outputs) {
+Brain::Brain (string _name, int _n_neurons, int avg_connections_per_neuron, int _n_inputs, int _n_outputs, float max_init_state, float max_init_delay) {
     cout << "Creating " << _name << "'s brain..." << endl;
     // parse parameters
     cout << " -- parsing parameters.. " << flush;
@@ -32,7 +32,7 @@ Brain::Brain (string _name, int _n_neurons, int avg_connections_per_neuron, int 
     cout << " -- creating neurons.. " << flush;
     for (int i=0; i < (*n_neurons); i++) {
         // use random state and decay rate
-        neurons[i] = new Neuron (to_string(i), 0.*rand()/RAND_MAX, 10.*rand()/RAND_MAX);
+        neurons[i] = new Neuron (to_string(i), max_init_state*rand()/RAND_MAX, max_init_delay*rand()/RAND_MAX);
         neuron_memblocks[i] = neurons[i]->memblock;
     }
     input_neurons = neurons;
@@ -104,6 +104,33 @@ void Brain__time_step_neurons (int* n_neurons, float*** neuron_memblocks, int* n
     // update neurons (ignore inputs)
     for (int i=index; i<(*n_neurons-*n_inputs); i+=stride) {
         Neuron__time_step(neuron_memblocks[i+(*n_inputs)]);
+    }
+}
+
+// raise all connection multiplicators to a small random power in (1-eps, 1+eps)
+__global__
+void Brain__shake_connections (int* n_connections, float*** connection_memblocks, float eps, curandState* curand_state, unsigned long seed) {
+    // CUDA setup
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    // CUrand setup
+    curand_init(seed, index, 0, &curand_state[index]);
+    // update connections
+    float power;
+    for (int i=index; i<(*n_connections); i+=stride) {
+        power = (1.-eps) + 2.*eps * curand_normal(curand_state);
+        *(connection_memblocks[i][1]) = pow(*(connection_memblocks[i][1]), power);
+    }
+}
+// raise all connection multiplicators to a given constant power
+__global__
+void Brain__feedback_connections (int* n_connections, float*** connection_memblocks, float power) {
+    // CUDA setup
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    int stride = blockDim.x * gridDim.x;
+    // update connections
+    for (int i=index; i<(*n_connections); i+=stride) {
+        *(connection_memblocks[i][1]) = pow(*(connection_memblocks[i][1]), power);
     }
 }
 
