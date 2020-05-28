@@ -80,6 +80,8 @@ public:
         float max_init_state=0., float max_init_decay=10., // neuron init
         int min_init_delay=10, int max_init_delay=10, float max_init_multiplier=1.); // connection init
     __host__ ~Brain ();
+    __host__ void flicker_test (int nblock, int nthread, int nstep, curandState* curand_state, float shake_eps=0.01);
+    __host__ void train (float* label, int nblock, int nthread, int nstep, curandState* curand_state, int shake_eps=0.01);
     __host__ friend ostream& operator<< (ostream&, const Brain&);
     __host__ void print_output ();
 };

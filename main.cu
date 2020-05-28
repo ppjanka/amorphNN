@@ -15,16 +15,22 @@ int main (void) {
 
     //cout << bob; return 0;
 
-    for (int t=0; t<100; t++) {
-        Brain__time_step_connections<<<40,32>>>(bob.n_connections, bob.connection_memblocks);
-        cudaDeviceSynchronize(); // wait until all connections updated
-        Brain__time_step_neurons<<<40,32>>>(bob.n_neurons, bob.neuron_memblocks, bob.n_inputs);
-        cudaDeviceSynchronize(); // wait until all connections updated
-        //cout << bob;
-        bob.print_output();
-        cout << "Time " << t << " finished." << endl << endl;
-        Brain__shake_connections<<<40,32>>>(bob.n_connections, bob.connection_memblocks, 0.01, curand_state, time(NULL));
+    bob.flicker_test(40,32,10000,curand_state,0.001);
+
+    //return 0;
+
+    // setup input
+    for (int i=0; i<8; i++) {
+        (*(bob.input_states[i])) = rand()/RAND_MAX;
     }
+    // setup label to memorize
+    float* label = new float [4];
+    for (int i=0; i<4; i++) {
+        label[i] = 0;
+    }
+    label[0] = 1;
+
+    //bob.train(label,40,32,1e6,curand_state,0.01);
 
     //cout << bob;
 
@@ -45,6 +51,9 @@ int main (void) {
 
     // cleanup
     //curandDestroyGenerator();
+
+    //cleanup
+    delete label;
 
     return 0;
 }

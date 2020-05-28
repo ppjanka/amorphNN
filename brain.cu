@@ -119,11 +119,18 @@ void Brain__shake_connections (int* n_connections, float*** connection_memblocks
     // CUrand setup
     curand_init(seed, index, 0, &curand_state[index]);
     // update connections
-    float factor, rand;
+    float rand, factor;
     for (int i=index; i<(*n_connections); i+=stride) {
         do {rand = curand_normal(curand_state);} while (rand < -1. || rand > 1.); // limits to prevent inf
-        factor = exp(log(1.+eps) * rand);
-        *(connection_memblocks[i][1]) *= factor;
+        // multiplicative
+        //factor = exp(log(1.+eps) * rand);
+        //*(connection_memblocks[i][1]) *= factor;
+        // additive
+        (*(connection_memblocks[i][1])) += eps * rand;
+        if (*(connection_memblocks[i][1]) > 0.04)
+            (*(connection_memblocks[i][1])) = 0.04;
+        else if (*(connection_memblocks[i][1]) < 0.)
+            (*(connection_memblocks[i][1])) = 0.;
     }
 }
 // raise all connection multiplicators to a given constant power
@@ -134,8 +141,61 @@ void Brain__feedback_connections (int* n_connections, float*** connection_memblo
     int stride = blockDim.x * gridDim.x;
     // update connections
     for (int i=index; i<(*n_connections); i+=stride) {
-        *(connection_memblocks[i][1]) = pow(*(connection_memblocks[i][1]), power);
+        // power based
+        //*(connection_memblocks[i][1]) = pow(*(connection_memblocks[i][1]), power);
+        // multiplicative
+        *(connection_memblocks[i][1]) *= power;
     }
+}
+
+__host__
+void Brain::flicker_test (int nblock, int nthread, int nstep, curandState* curand_state, float shake_eps) {
+    cout << "Flicker test:" << endl;
+    for (int t=0; t<nstep; t++) {
+        Brain__time_step_connections<<<nblock,nthread>>>(n_connections, connection_memblocks);
+        cudaDeviceSynchronize(); // wait until all connections updated
+        Brain__time_step_neurons<<<nblock,nthread>>>(n_neurons, neuron_memblocks, n_inputs);
+        cudaDeviceSynchronize(); // wait until all connections updated
+        //cout << bob;
+        print_output();
+        cout << "Time " << t << " finished." << endl << endl;
+        Brain__shake_connections<<<nblock,nthread>>>(n_connections, connection_memblocks, shake_eps, curand_state, rand());
+        cudaDeviceSynchronize(); // wait until all connections updated
+    }
+    cout << "Flicker test done." << endl;
+}
+
+__host__
+void Brain::train (float* label, int nblock, int nthread, int nstep, curandState* curand_state, int shake_eps) {
+    cout << "Training:" << endl;
+    float chisqr, buff;
+    //float pmin, pmax;
+    for (int t=0; t<nstep; t++) {
+        // perform time step
+        Brain__time_step_connections<<<nblock,nthread>>>(n_connections, connection_memblocks);
+        cudaDeviceSynchronize(); // wait until all connections updated
+        Brain__time_step_neurons<<<nblock,nthread>>>(n_neurons, neuron_memblocks, n_inputs);
+        cudaDeviceSynchronize(); // wait until all connections updated
+        //cout << bob;
+        print_output();
+        // perform feedback
+        chisqr = 0.;
+        #pragma omp simd
+        for (int i=0; i<(*n_outputs); i++) {
+            buff = (*(output_states[i])) - label[i];
+            chisqr += buff*buff;
+        }
+        cout << "chisqr = " << chisqr << endl;
+        if (chisqr < 0.25) {
+            Brain__feedback_connections<<<nblock,nthread>>>(n_connections, connection_memblocks, 1. + 0.01/(1.+chisqr));
+            cudaDeviceSynchronize(); // wait until all connections updated
+        }
+        // finalize and flicker
+        cout << "Time " << t << " finished." << endl << endl;
+        Brain__shake_connections<<<nblock,nthread>>>(n_connections, connection_memblocks, shake_eps, curand_state, rand());
+        cudaDeviceSynchronize(); // wait until all connections updated
+    }
+    cout << "Training done." << endl;
 }
 
 __host__
