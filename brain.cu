@@ -157,8 +157,8 @@ void Brain::flicker_test (int nblock, int nthread, int nstep, curandState* curan
         Brain__time_step_neurons<<<nblock,nthread>>>(n_neurons, neuron_memblocks, n_inputs);
         cudaDeviceSynchronize(); // wait until all connections updated
         //cout << bob;
+        cout << "Time " << t << " finished. ";
         print_output();
-        cout << "Time " << t << " finished." << endl << endl;
         Brain__shake_connections<<<nblock,nthread>>>(n_connections, connection_memblocks, shake_eps, curand_state, rand());
         cudaDeviceSynchronize(); // wait until all connections updated
     }
