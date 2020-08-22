@@ -1,0 +1,10 @@
+# amorphNN
+Playing with amorphic / spiking neural networks as a CUDA practice exercise.
+
+A small exercise in building amorphic / spiking neural networks with CUDA, to keep my CUDA programming fresh. These types of neural networks are designed to better reflect biological neural networks. This includes time delay as signal passes through connections between neurons as well as signal decay with time. I have not found any reasonable way to train the implementation in this repo within the time I am willing to give to this exercise, so I have left it be for now. Feel free to have a look or use anything if interested.
+
+In this implementation:
+ - Connection class (connection.cu) represents a connection between two neurons. It is simply a queue of float-type neuron states, with the queue progressing by 1 with each passing time step (time is counted as an integer). The first (highest) position within the queue is linked to the float corresponding to its source-neuron's state (see below). The last (0-th) position is multiplied by a multiplier property, corresponding to a weight in traditional NNs.
+ - Neuron class (neuron.cu) stores the state of a neuron, its properties (decay_rate), and pointers to last positions in queues of all the Connection-s feeding its state. At each time step (Neuron__time_step()), the last state of the neuron is added to all the incoming signals from feed connections, and then a decay / activation function is performed (Neuron__activate()).
+ - Brain class (brain.cu) is a collection of Connection-s and Neuron-s, linked together. The default constructor wires the Brain randomly (note that, unlike typical NNs, ANNs allow for loops and complex graphs of neuron connections). Brain::flicker_test() uses Brain__shake_connections to randomly disturb the connection multipliers (how "good" of a conductor the given synapse is) to see how random walk within the network works (ideally, output states should oscillate around some value, but work is needed to get the statistics of it completely right). Some rudimentary scaffolding for training is present, but I have not worked on it too much.
+ - main.cu actually runs the code.
